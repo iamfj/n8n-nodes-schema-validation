@@ -1,46 +1,155 @@
-# @iamfj/n8n-nodes-schema
+# @iamfj/n8n-nodes-schema-validation
 
-This is an n8n community node. It lets you use _app/service name_ in your n8n workflows.
+[![npm version](https://badge.fury.io/js/@iamfj%2Fn8n-nodes-schema-validation.svg)](https://www.npmjs.com/package/@iamfj/n8n-nodes-schema-validation)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-_App/service name_ is _one or two sentences describing the service this node integrates with_.
+JSON Schema validation node for [n8n](https://n8n.io/) workflows. Validate your data against JSON Schema standards with error output routing.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
-[Installation](#installation)
-[Operations](#operations)
-[Credentials](#credentials)
-[Compatibility](#compatibility)
-[Usage](#usage)
-[Resources](#resources)
-[Version history](#version-history)
+> **✅ n8n Cloud Compatible**
+> 
+> This package has all dependencies bundled and is fully compatible with n8n Cloud.
 
 ## Installation
 
 Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
 
-## Operations
+### Community Nodes Installation
 
-_List the operations supported by your node._
+1. Go to **Settings** > **Community Nodes** in your n8n instance
+2. Select **Install**
+3. Enter `@iamfj/n8n-nodes-schema-validation` in the search field
+4. Click **Install**
+
+### Manual Installation
+
+For self-hosted n8n instances, you can install via npm:
+
+```bash
+npm install @iamfj/n8n-nodes-schema-validation
+```
+
+Then restart your n8n instance.
+
+## Features
+
+Validates JSON data against a JSON Schema using n8n's "Continue on Fail" error handling pattern.
+
+**Features:**
+- ✅ Validate incoming data against JSON Schema standards
+- ⚠️ Error output routing with "Continue on Fail" mode
+- 🎯 Support for custom JSON input via expressions
+- 📊 Detailed validation error messages with field paths
+- ⚡ Built on [AJV](https://ajv.js.org/) - fast and reliable JSON Schema validator
+- 🧪 100% test coverage with comprehensive unit tests
+- 📦 All dependencies bundled for n8n Cloud compatibility
+
+**Use Cases:**
+- Data quality checks before processing
+- API response validation
+- Form data validation
+- ETL pipeline data verification
+- Contract testing between workflows
+
+**Configuration:**
+- **JSON Schema**: Define your validation schema (JSON Schema Draft 7 format)
+- **Data Source**: Choose between "Input Data" or "Custom JSON"
+- **Custom JSON**: Optional field for n8n expressions (e.g., `{{ $json.data }}`)
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "number", "minimum": 0 },
+    "email": { "type": "string", "format": "email" }
+  },
+  "required": ["name", "email"]
+}
+```
+
+**Output:**
+- **Default Output**: Items that pass validation
+- **Error Output**: Items that fail validation (when "Continue on Fail" is enabled)
+
+Enable "On Error -> Continue (using error output)" in node settings to route failed validations to the error branch instead of stopping execution.
+
+## Architecture
+
+The node is built following clean code principles with testable units:
+
+```
+SchemaValidator/
+├── SchemaValidator.node.ts    # Main node implementation
+├── types.ts                    # TypeScript interfaces
+└── helpers/
+    ├── schemaParser.ts         # Schema parsing logic
+    ├── dataExtractor.ts        # Data extraction logic
+    ├── validator.ts            # Validation logic with AJV
+    └── __tests__/              # Comprehensive unit tests
+```
+
+See [helpers/README.md](./nodes/SchemaValidator/helpers/README.md) for detailed documentation.
 
 ## Credentials
 
-_If users need to authenticate with the app/service, provide details here. You should include prerequisites (such as signing up with the service), available authentication methods, and how to set them up._
+None of the current nodes require credentials. All operations are performed locally within your n8n instance.
 
-## Compatibility
+## Contributing
 
-_State the minimum n8n version, as well as which versions you test against. You can also include any known version incompatibility issues._
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## Usage
+### Development Setup
 
-_This is an optional section. Use it to help users with any difficult or confusing aspects of the node._
+```bash
+# Install dependencies
+bun install
 
-_By the time users are looking for community nodes, they probably already know n8n basics. But if you expect new users, you can link to the [Try it out](https://docs.n8n.io/try-it-out/) documentation to help them get started._
+# Build the project
+bun run build
+
+# Run in development mode
+bun run dev
+
+# Run linting
+bun run lint
+
+# Format code
+bun run format
+
+# Run unit tests
+bun test
+
+# Run tests in watch mode
+bun test --watch
+
+# Run tests with coverage
+bun test --coverage
+```
 
 ## Resources
 
-* [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
-* _Link to app/service documentation._
+- [n8n Community Nodes Documentation](https://docs.n8n.io/integrations/#community-nodes)
+- [JSON Schema Documentation](https://json-schema.org/)
+- [AJV JSON Schema Validator](https://ajv.js.org/)
 
-## Version history
+## License
 
-_This is another optional section. If your node has multiple versions, include a short description of available versions and what changed, as well as any compatibility impact._
+MIT © [Fabian Jocks](https://github.com/iamfj)
+
+## Issues & Support
+
+If you encounter any issues or have questions:
+- [Report a bug](https://github.com/iamfj/n8n-nodes-schema-validation/issues/new?template=bug-report.md)
+- [Request a feature](https://github.com/iamfj/n8n-nodes-schema-validation/issues/new?template=feature-request.md)
+- [Ask a question](https://github.com/iamfj/n8n-nodes-schema-validation/discussions)
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history and release notes.
+
+---
+
+Made with ❤️ in Ruhrgebiet for the n8n community

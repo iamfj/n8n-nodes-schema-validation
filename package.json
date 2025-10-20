@@ -1,52 +1,83 @@
 {
-    "name": "@iamfj/n8n-nodes-schema",
-    "version": "0.1.0",
-    "description": "",
-    "license": "MIT",
-    "homepage": "",
-    "keywords": [
-        "n8n-community-node-package"
-    ],
-    "author": {
-        "name": "Fabian Jocks",
-        "email": "24557998+iamfj@users.noreply.github.com"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/iamfj/n8n-nodes-schema.git"
-    },
-    "scripts": {
-        "build": "n8n-node build",
-        "build:watch": "tsc --watch",
-        "dev": "n8n-node dev",
-        "lint": "n8n-node lint",
-        "lint:fix": "n8n-node lint --fix",
-        "release": "n8n-node release",
-        "prepublishOnly": "n8n-node prerelease"
-    },
-    "files": [
-        "dist"
-    ],
-    "n8n": {
-        "n8nNodesApiVersion": 1,
-        "strict": true,
-        "credentials": [],
-        "nodes": [
-            "dist/nodes/Example/Example.node.js",
-            "dist/nodes/SchemaValidator/SchemaValidator.node.js"
-        ]
-    },
-    "devDependencies": {
-        "@n8n/node-cli": "*",
-        "eslint": "9.32.0",
-        "prettier": "3.6.2",
-        "release-it": "^19.0.4",
-        "typescript": "5.9.2"
-    },
-    "peerDependencies": {
-        "n8n-workflow": "*"
-    },
-    "dependencies": {
-        "ajv": "^8.17.1"
-    }
+	"name": "@iamfj/n8n-nodes-schema-validation",
+	"version": "0.0.0",
+	"description": "JSON Schema validation node for n8n workflows with dual output routing",
+	"license": "MIT",
+	"homepage": "https://github.com/iamfj/n8n-nodes-schema-validation#readme",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"n8n-nodes",
+		"json-schema",
+		"schema-validation",
+		"validation",
+		"ajv",
+		"data-validation"
+	],
+	"author": {
+		"name": "Fabian Jocks",
+		"email": "24557998+iamfj@users.noreply.github.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/iamfj/n8n-nodes-schema-validation.git"
+	},
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org/",
+		"tag": "latest",
+		"access": "public"
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint --write .",
+		"lint:n8n": "n8n-node lint || true",
+		"format": "biome check --write .",
+		"format:check": "biome check .",
+		"test": "bun test",
+		"test:watch": "bun test --watch",
+		"test:coverage": "bun test --coverage",
+		"release": "semantic-release",
+		"release:dry": "semantic-release --dry-run",
+		"postinstall": "lefthook install"
+	},
+	"files": [
+		"dist"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": [],
+		"nodes": [
+			"dist/nodes/SchemaValidator/SchemaValidator.node.js"
+		]
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.6",
+		"@commitlint/cli": "^20.1.0",
+		"@commitlint/config-conventional": "^20.0.0",
+		"@n8n/node-cli": "*",
+		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/commit-analyzer": "^13.0.1",
+		"@semantic-release/git": "^10.0.1",
+		"@semantic-release/github": "^12.0.0",
+		"@semantic-release/npm": "^13.0.0",
+		"@semantic-release/release-notes-generator": "^14.1.0",
+		"@types/bun": "^1.1.15",
+		"lefthook": "^1.13.6",
+		"release-it": "^19.0.4",
+		"semantic-release": "^25.0.0",
+		"typescript": "5.9.2"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	},
+	"dependencies": {
+		"ajv": "^8.17.1"
+	},
+	"patchedDependencies": {
+		"semantic-release@25.0.0": "patches/semantic-release@25.0.0.patch"
+	}
 }

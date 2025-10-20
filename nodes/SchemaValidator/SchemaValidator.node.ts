@@ -5,36 +5,36 @@ import type {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-import Ajv from 'ajv';
+import { extractDataToValidate } from './lib/dataExtractor';
+import { parseSchema } from './lib/schemaParser';
+import {
+	createValidator,
+	formatValidationErrorMessage,
+	isValidJsonSchema,
+	validateData,
+} from './lib/validator';
+import type { DataSource } from './types';
 
 export class SchemaValidator implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'JSON Schema Validator',
+		displayName: 'Schema Validator',
 		name: 'schemaValidator',
-		icon: 'fa:check-circle',
+		icon: 'file:SchemaValidator.svg',
 		group: ['transform'],
 		version: 1,
 		description: 'Validates JSON data against a JSON Schema',
 		defaults: {
-			name: 'JSON Schema Validator',
+			name: 'Schema Validator',
 		},
 		inputs: [NodeConnectionTypes.Main],
-		outputs: [
-			{
-				type: NodeConnectionTypes.Main,
-				displayName: 'Valid',
-			},
-			{
-				type: NodeConnectionTypes.Main,
-				displayName: 'Invalid',
-			},
-		],
+		outputs: [NodeConnectionTypes.Main],
 		properties: [
 			{
 				displayName: 'JSON Schema',
 				name: 'jsonSchema',
 				type: 'json',
-				default: '{\n  "type": "object",\n  "properties": {\n    "name": {\n      "type": "string"\n    }\n  },\n  "required": ["name"]\n}',
+				default:
+					'{\n  "type": "object",\n  "properties": {\n    "name": {\n      "type": "string"\n    }\n  },\n  "required": ["name"]\n}',
 				description: 'The JSON Schema to validate against',
 				required: true,
 			},
@@ -78,84 +78,65 @@ export class SchemaValidator implements INodeType {
 	 */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const validItems: INodeExecutionData[] = [];
-		const invalidItems: INodeExecutionData[] = [];
+		const returnData: INodeExecutionData[] = [];
 
-		// Get schema once (same for all items)
 		const schemaJson = this.getNodeParameter('jsonSchema', 0) as string;
-		const dataSource = this.getNodeParameter('dataSource', 0) as string;
+		const dataSource = this.getNodeParameter('dataSource', 0) as DataSource;
 
 		let schema: object;
 		try {
-			schema = typeof schemaJson === 'string' ? JSON.parse(schemaJson) : schemaJson;
+			schema = parseSchema(schemaJson);
+			// Validate that it's a proper JSON Schema
+			if (!isValidJsonSchema(schema)) {
+				throw new Error('Invalid JSON Schema format');
+			}
 		} catch (error) {
-			throw new NodeOperationError(
-				this.getNode(),
-				`Invalid JSON Schema: ${error.message}`,
-			);
+			throw new NodeOperationError(this.getNode(), `Invalid JSON Schema: ${error.message}`);
 		}
 
-		// Initialize AJV validator
-		const ajv = new Ajv({ allErrors: true });
-		const validate = ajv.compile(schema);
+		// Compile schema once for reuse across all items
+		const validator = createValidator(schema);
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			const item = items[itemIndex];
-			let dataToValidate: unknown;
 
 			try {
-				// Determine what data to validate
-				if (dataSource === 'customJson') {
-					const customJsonParam = this.getNodeParameter('customJson', itemIndex) as string;
-					if (!customJsonParam) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Custom JSON is required when Data Source is "Custom JSON"',
-							{ itemIndex },
-						);
-					}
-					// Parse if string, otherwise use as-is (in case it's already an object from expression)
-					dataToValidate = typeof customJsonParam === 'string' 
-						? JSON.parse(customJsonParam) 
-						: customJsonParam;
-				} else {
-					dataToValidate = item.json;
-				}
+				const customJsonParam =
+					dataSource === 'customJson'
+						? (this.getNodeParameter('customJson', itemIndex) as string)
+						: undefined;
 
-				// Validate the data
-				const isValid = validate(dataToValidate);
+				const dataToValidate = extractDataToValidate(item, dataSource, customJsonParam);
+				const { isValid, errors } = validateData(validator, dataToValidate);
 
-				if (isValid) {
-					validItems.push(item);
-				} else {
-					const invalidItem = {
-						json: {
-							validationErrors: validate.errors?.map((err) => ({
-								field: err.instancePath || '/',
-								message: err.message,
-								keyword: err.keyword,
-								params: err.params,
-							})) || [],
+				if (!isValid) {
+					const errorMessage = formatValidationErrorMessage(errors);
+					throw new NodeOperationError(
+						this.getNode(),
+						`JSON Schema validation failed: ${errorMessage}`,
+						{
+							itemIndex,
+							description: JSON.stringify(errors),
 						},
-						pairedItem: itemIndex,
-					};
-					invalidItems.push(invalidItem);
+					);
 				}
+
+				returnData.push(item);
 			} catch (error) {
+				// Route to error output if "Continue on Fail" enabled, otherwise stop execution
 				if (this.continueOnFail()) {
-					invalidItems.push({
+					returnData.push({
 						json: {
-							...item.json,
 							error: error.message,
 						},
 						pairedItem: itemIndex,
 					});
 				} else {
-					throw new NodeOperationError(this.getNode(), error, { itemIndex });
+					throw error;
 				}
 			}
 		}
 
-		return [validItems, invalidItems];
+		return [returnData];
 	}
 }
