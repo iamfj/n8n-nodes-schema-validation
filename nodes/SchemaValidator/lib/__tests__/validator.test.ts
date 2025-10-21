@@ -18,7 +18,9 @@ describe('validator', () => {
 				},
 			};
 
-			expect(isValidJsonSchema(schema)).toBe(true);
+			const result = isValidJsonSchema(schema);
+			expect(result.isValid).toBe(true);
+			expect(result.error).toBeUndefined();
 		});
 
 		it('should return true for complex valid schema', () => {
@@ -36,7 +38,9 @@ describe('validator', () => {
 				},
 			};
 
-			expect(isValidJsonSchema(schema)).toBe(true);
+			const result = isValidJsonSchema(schema);
+			expect(result.isValid).toBe(true);
+			expect(result.error).toBeUndefined();
 		});
 
 		it('should return false for invalid schema with wrong type reference', () => {
@@ -44,7 +48,10 @@ describe('validator', () => {
 				type: 'invalid-type',
 			};
 
-			expect(isValidJsonSchema(schema)).toBe(false);
+			const result = isValidJsonSchema(schema);
+			expect(result.isValid).toBe(false);
+			expect(result.error).toBeDefined();
+			expect(result.error).toContain('schema is invalid');
 		});
 
 		it('should return false for schema with invalid structure', () => {
@@ -53,13 +60,39 @@ describe('validator', () => {
 				properties: 'not-an-object',
 			};
 
-			expect(isValidJsonSchema(schema)).toBe(false);
+			const result = isValidJsonSchema(schema);
+			expect(result.isValid).toBe(false);
+			expect(result.error).toBeDefined();
 		});
 
 		it('should return true for empty schema', () => {
 			const schema = {};
 
-			expect(isValidJsonSchema(schema)).toBe(true);
+			const result = isValidJsonSchema(schema);
+			expect(result.isValid).toBe(true);
+			expect(result.error).toBeUndefined();
+		});
+
+		it('should provide detailed error message for schema with unknown format', () => {
+			const schema = {
+				type: 'string',
+				format: 'custom-unknown-format',
+			};
+
+			const result = isValidJsonSchema(schema);
+			expect(result.isValid).toBe(false);
+			expect(result.error).toBeDefined();
+			expect(result.error).toContain('unknown format');
+		});
+
+		it('should provide detailed error for schema with invalid reference', () => {
+			const schema = {
+				$ref: '#/definitions/nonexistent',
+			};
+
+			const result = isValidJsonSchema(schema);
+			expect(result.isValid).toBe(false);
+			expect(result.error).toBeDefined();
 		});
 	});
 

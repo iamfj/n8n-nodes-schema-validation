@@ -6,14 +6,15 @@ const ajv = new Ajv({ allErrors: true, strict: true, verbose: true });
 /**
  * Validates if a schema is a valid JSON Schema.
  * @param schema Schema object to validate
- * @returns True if valid JSON Schema
+ * @returns Object with isValid flag and optional error message
  */
-export function isValidJsonSchema(schema: object): boolean {
+export function isValidJsonSchema(schema: object): { isValid: boolean; error?: string } {
 	try {
 		ajv.compile(schema);
-		return true;
-	} catch {
-		return false;
+		return { isValid: true };
+	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		return { isValid: false, error: errorMessage };
 	}
 }
 

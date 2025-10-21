@@ -87,8 +87,11 @@ export class SchemaValidator implements INodeType {
 		try {
 			schema = parseSchema(schemaJson);
 			// Validate that it's a proper JSON Schema
-			if (!isValidJsonSchema(schema)) {
-				throw new Error('Invalid JSON Schema Format');
+			const validationResult = isValidJsonSchema(schema);
+			if (!validationResult.isValid) {
+				throw new Error(
+					`Invalid JSON Schema Format: ${validationResult.error || 'Unknown schema validation error'}`,
+				);
 			}
 		} catch (error) {
 			throw new NodeOperationError(this.getNode(), error);
