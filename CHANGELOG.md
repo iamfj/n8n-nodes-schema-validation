@@ -1,3 +1,8 @@
+## <small>0.1.2 (2025-10-21)</small>
+
+* fix(schema-validator): propagate original schema compile errors ([bd52c87](https://github.com/iamfj/n8n-nodes-schema-validation/commit/bd52c87))
+* refactor(schema-validator): use single ajv instance with strict/verbose ([518d08e](https://github.com/iamfj/n8n-nodes-schema-validation/commit/518d08e))
+
 ## <small>0.1.1 (2025-10-21)</small>
 
 * fix(schema-validator): propagate original error for invalid json schema ([c969bb5](https://github.com/iamfj/n8n-nodes-schema-validation/commit/c969bb5))
