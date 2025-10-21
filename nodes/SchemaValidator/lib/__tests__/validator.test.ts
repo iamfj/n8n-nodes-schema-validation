@@ -292,4 +292,194 @@ describe('validator', () => {
 			expect(result).toBe('/user/profile/name: is required');
 		});
 	});
+
+	describe('strict mode', () => {
+		it('should reject schema with unknown keywords in strict mode', () => {
+			const schemaWithUnknownKeyword = {
+				type: 'object',
+				properties: {
+					name: { type: 'string' },
+				},
+				unknownKeyword: 'value',
+			};
+
+			expect(() => createValidator(schemaWithUnknownKeyword)).toThrow();
+		});
+
+		it('should reject schema with incorrect types in strict mode', () => {
+			const schemaWithIncorrectType = {
+				type: 'object',
+				properties: {
+					name: { type: 'unknown-type' },
+				},
+			};
+
+			expect(() => createValidator(schemaWithIncorrectType)).toThrow();
+		});
+
+		it('should reject schema with ambiguous types in strict mode', () => {
+			const schemaWithAmbiguousType = {
+				type: 'object',
+				properties: {
+					value: {
+						type: ['string', 'number'],
+						format: 'email', // Format only valid for strings
+					},
+				},
+			};
+
+			expect(() => createValidator(schemaWithAmbiguousType)).toThrow();
+		});
+
+		it('should validate schema with valid JSON Schema Draft keywords', () => {
+			const validSchema = {
+				type: 'object',
+				properties: {
+					name: { type: 'string', minLength: 1 },
+					age: { type: 'number', minimum: 0 },
+				},
+				required: ['name'],
+				additionalProperties: false,
+			};
+
+			expect(() => createValidator(validSchema)).not.toThrow();
+		});
+
+		it('should enforce strict schema validation rules', () => {
+			const validSchemaWithConst = {
+				type: 'string',
+				const: 'fixed-value',
+			};
+
+			const validator = createValidator(validSchemaWithConst);
+			const result = validateData(validator, 'fixed-value');
+
+			expect(result.isValid).toBe(true);
+		});
+	});
+
+	describe('verbose mode', () => {
+		it('should include detailed params in validation errors', () => {
+			const schema = {
+				type: 'object',
+				properties: {
+					age: { type: 'number', minimum: 18 },
+				},
+			};
+
+			const validator = createValidator(schema);
+			const result = validateData(validator, { age: 15 });
+
+			expect(result.isValid).toBe(false);
+			expect(result.errors[0].params).toBeDefined();
+			expect(result.errors[0].params).toHaveProperty('limit');
+			expect(result.errors[0].params.limit).toBe(18);
+		});
+
+		it('should provide detailed info for required property errors', () => {
+			const schema = {
+				type: 'object',
+				properties: {
+					name: { type: 'string' },
+				},
+				required: ['name'],
+			};
+
+			const validator = createValidator(schema);
+			validator({});
+
+			const errors = transformValidationErrors(validator);
+
+			expect(errors[0].params).toBeDefined();
+			expect(errors[0].params).toHaveProperty('missingProperty');
+			expect(errors[0].params.missingProperty).toBe('name');
+		});
+
+		it('should include detailed params for array length validation', () => {
+			const schema = {
+				type: 'object',
+				properties: {
+					items: { type: 'array', minItems: 2, maxItems: 5 },
+				},
+			};
+
+			const validator = createValidator(schema);
+			const invalidData = { items: ['one'] };
+			const result = validateData(validator, invalidData);
+
+			expect(result.isValid).toBe(false);
+			expect(result.errors[0].params).toBeDefined();
+			expect(result.errors[0].params).toHaveProperty('limit');
+			expect(result.errors[0].params.limit).toBe(2);
+		});
+
+		it('should provide detailed params for enum validation failures', () => {
+			const schema = {
+				type: 'object',
+				properties: {
+					status: { type: 'string', enum: ['active', 'inactive', 'pending'] },
+				},
+			};
+
+			const validator = createValidator(schema);
+			const result = validateData(validator, { status: 'unknown' });
+
+			expect(result.isValid).toBe(false);
+			expect(result.errors[0].params).toBeDefined();
+			expect(result.errors[0].params).toHaveProperty('allowedValues');
+			expect(result.errors[0].params.allowedValues).toEqual(['active', 'inactive', 'pending']);
+		});
+
+		it('should include pattern details in regex validation errors', () => {
+			const schema = {
+				type: 'object',
+				properties: {
+					code: { type: 'string', pattern: '^[A-Z]{3}$' },
+				},
+			};
+
+			const validator = createValidator(schema);
+			const result = validateData(validator, { code: 'abc' });
+
+			expect(result.isValid).toBe(false);
+			expect(result.errors[0].params).toBeDefined();
+			expect(result.errors[0].params).toHaveProperty('pattern');
+			expect(result.errors[0].params.pattern).toBe('^[A-Z]{3}$');
+		});
+
+		it('should provide type information in validation errors', () => {
+			const schema = {
+				type: 'object',
+				properties: {
+					count: { type: 'integer' },
+				},
+			};
+
+			const validator = createValidator(schema);
+			const result = validateData(validator, { count: 'not a number' });
+
+			expect(result.isValid).toBe(false);
+			expect(result.errors[0].params).toBeDefined();
+			expect(result.errors[0].params).toHaveProperty('type');
+			expect(result.errors[0].params.type).toBe('integer');
+		});
+
+		it('should include additionalProperties details in errors', () => {
+			const schema = {
+				type: 'object',
+				properties: {
+					name: { type: 'string' },
+				},
+				additionalProperties: false,
+			};
+
+			const validator = createValidator(schema);
+			const result = validateData(validator, { name: 'John', extra: 'value' });
+
+			expect(result.isValid).toBe(false);
+			expect(result.errors[0].keyword).toBe('additionalProperties');
+			expect(result.errors[0].params).toBeDefined();
+			expect(result.errors[0].params).toHaveProperty('additionalProperty');
+		});
+	});
 });

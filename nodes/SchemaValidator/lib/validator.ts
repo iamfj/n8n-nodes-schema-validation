@@ -1,6 +1,8 @@
 import Ajv, { type ValidateFunction } from 'ajv';
 import type { ValidationError, ValidationResult } from '../types';
 
+const ajv = new Ajv({ allErrors: true, strict: true, verbose: true });
+
 /**
  * Validates if a schema is a valid JSON Schema.
  * @param schema Schema object to validate
@@ -8,7 +10,6 @@ import type { ValidationError, ValidationResult } from '../types';
  */
 export function isValidJsonSchema(schema: object): boolean {
 	try {
-		const ajv = new Ajv({ allErrors: true });
 		ajv.compile(schema);
 		return true;
 	} catch {
@@ -22,7 +23,6 @@ export function isValidJsonSchema(schema: object): boolean {
  * @returns Compiled validator function
  */
 export function createValidator(schema: object): ValidateFunction {
-	const ajv = new Ajv({ allErrors: true });
 	return ajv.compile(schema);
 }
 
